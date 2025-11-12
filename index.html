@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover" />
+<title>121 Checkout Trainer</title>
+
+<style>
+:root{
+  --bg:#0b0b0b; --card:#1b1b1b; --ink:#f5f5f5; --muted:#bdbdbd;
+  --accent:#ffd700; --blue:#7fb5ff; --danger:#d9534f;
+  --btn:#2c2c2c; --btn2:#eeeeee; --r:16px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  text-align:center;
+}
+h1{margin:12px 0 6px; color:var(--accent); text-shadow:0 0 8px #000}
+
+section{
+  max-width:420px; margin:10px auto; background:var(--card);
+  border-radius:var(--r); padding:14px; box-shadow:0 0 12px #000;
+}
+
+label{display:block; text-align:left; margin:8px 0; color:var(--ink)}
+.small{font-size:.9rem; color:var(--muted)}
+
+input[type="number"], select{
+  width:100%; background:#222; color:#fff; border:1px solid #444;
+  border-radius:8px; padding:8px; font-size:1rem;
+}
+button{
+  font-size:1rem; border:none; border-radius:10px; padding:9px 12px;
+  background:var(--btn); color:#fff; cursor:pointer;
+  transition:all .15s; box-shadow:0 2px 4px rgba(0,0,0,.3)
+}
+button:hover{background:#3a3a3a; transform:translateY(-1px)}
+
+/* Dubbel-gelabelde toggle (PDC ↔ Calculated) */
+.toggle-row{display:flex; align-items:center; justify-content:center; gap:10px; margin:8px 0}
+.toggle-label{font-size:.95rem; color:var(--muted)}
+.switch{position:relative; width:52px; height:28px; border-radius:28px; background:#555; cursor:pointer}
+.switch input{opacity:0; width:0; height:0}
+.knob{position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:#fff; transition:transform .25s}
+.switch input:checked + .knob{transform:translateX(24px)}
+.switch input:checked ~ .bar{background:#2196f3}
+.bar{position:absolute; inset:0; border-radius:28px; background:#666; z-index:-1}
+
+/* Scorekop */
+#scoreHeader{position:relative; margin:2px 0 10px}
+#roundInfo{position:absolute; right:10px; top:0; font-size:.9rem; color:var(--muted)}
+#remainingDisplay{font-size:3.2rem; font-weight:800; letter-spacing:.5px; text-shadow:0 0 10px #000}
+#adviceDisplay{margin-top:2px; font-weight:800; font-size:1.1rem; color:var(--accent); min-height:22px}
+
+/* Tabs */
+.tabbar{display:flex; gap:8px; background:#111; border-radius:10px; margin:6px 0 10px}
+.tab{flex:1; padding:10px 0; color:var(--blue); border-bottom:3px solid transparent; cursor:pointer; font-weight:700}
+.tab.active{border-bottom:3px solid var(--accent); background:#1f1f1f; box-shadow:inset 0 -3px 5px rgba(255,235,59,.3)}
+
+/* Raster + knoppen */
+.grid{display:grid; grid-template-columns:repeat(5,1fr); gap:6px; padding:6px}
+.score-btn{background:#2b2b2b; color:#fff; border:none; border-radius:8px; width:60px; height:45px; font-size:1.1rem; font-weight:600}
+.score-btn:hover{background:#3c3c3c; transform:translateY(-2px)}
+#bottomButtons{display:flex; justify-content:center; gap:8px; padding:6px; flex-wrap:wrap}
+#btnNS,#btnSB,#btnBull{background:var(--btn2); color:#000}
+#btnUndo{background:var(--danger); color:#fff; box-shadow:0 0 8px rgba(255,0,0,.35)}
+#btnUndo:hover{background:#e53935}
+#btnSettingsBottom {
+    background: #444;
+    color: #ffd700;
+    border: none;
+    width: 60px;
+    height: 45px;
+    border-radius: 10px;
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+#btnSettingsBottom:hover {
+    background: #555;
+}
+
+/* Log per beurt */
+#logContainer{background:#141414; border-radius:10px; padding:6px; margin-top:8px; font-size:.9rem; text-align:left; max-height:118px; overflow:hidden}
+.log-turn{padding:4px 6px; border-bottom:1px solid #222}
+.log-turn:nth-child(odd){background:rgba(255,255,255,.04)}
+.log-turn:nth-child(even){background:rgba(255,255,255,.07)}
+.log-turn strong{color:var(--accent)}
+.message{margin-top:5px; font-size:.95rem; color:var(--accent)}
+.hidden{display:none}
+
+/* Instellingen-knop in spel */
+.settings-btn {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #222;
+    color: #ffd700;
+    border: none;
+    border-radius: 8px;
+    padding: 5px 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+    z-index: 10;
+}
+.settings-btn:hover {
+    background: #333;
+}
+
+
+/* Mobiel */
+@media (max-width:600px){
+  .score-btn{width:52px; height:40px; font-size:1rem}
+  section{padding:12px}
+  #remainingDisplay{font-size:2.6rem}
+  .settings-btn{top:8px; right:8px; font-size:.9rem; padding:5px 8px}
+}
+
+---
+
+```html
+</style>
+</head>
+<body>
+
+<h1>121 Checkout Trainer</h1>
+
+<!-- ===== INSTELLINGEN ===== -->
+<section id="settingsSection">
+  <label>Startscore:</label>
+  <input id="startScoreInput" type="number" value="121" min="2" max="170" />
+
+  <label>Beurten per leg:</label>
+  <select id="turnsSelect">
+    <option value="1">1 beurt (3 pijlen)</option>
+    <option value="2">2 beurten (6 pijlen)</option>
+    <option value="3" selected>3 beurten (9 pijlen)</option>
+    <option value="4">4 beurten (12 pijlen)</option>
+  </select>
+
+  <label class="toggle-row">
+    <input id="setbackToggle" type="checkbox" />
+    <span class="small">Setback bij missen (1 lager bij mislukte leg)</span>
+  </label>
+
+  <div class="toggle-row">
+    <span class="toggle-label">PDC Checkout</span>
+    <label class="switch">
+      <!-- checked = Calculated aan; default uit = PDC -->
+      <input id="adviceModeToggle" type="checkbox" />
+      <span class="knob"></span><span class="bar"></span>
+    </label>
+    <span class="toggle-label">Calculated Checkout</span>
+  </div>
+
+  <button id="startBtn">Spel starten</button>
+</section>
+
+<!-- ===== SPELSCHERM ===== -->
+<section id="gameSection" class="hidden">
+ <div id="scoreHeader">
+
+  
+
+    <div id="roundInfo">Ronde 1 | Beurt 1/3</div>
+    <div id="remainingDisplay">121</div>
+    <div id="adviceDisplay">T20 T11 D14</div>
+</div>
+
+
+  <div class="tabbar">
+    <div class="tab active" id="tabSingles">Singles</div>
+    <div class="tab" id="tabDoubles">Doubles</div>
+    <div class="tab" id="tabTriples">Triples</div>
+  </div>
+
+  <div class="grid" id="gridContainer"></div>
+
+<div id="bottomButtons">
+    <button id="btnNS">NS</button>
+    <button id="btnSB">SB</button>
+    <button id="btnBull">Bull</button>
+    <button id="btnUndo">Undo</button>
+    <button id="btnSettingsBottom" class="settings-bottom">⚙️</button>
+</div>
+
+
+  <div id="logContainer"></div>
+  <div class="message" id="message"></div>
+</section>
+
+<!-- ===== SCRIPT ===== -->
+<script>
+// --- Elementen ---
+const settingsSection   = document.getElementById("settingsSection");
+const gameSection       = document.getElementById("gameSection");
+const startBtn          = document.getElementById("startBtn");
+const startScoreInput   = document.getElementById("startScoreInput");
+const turnsSelect       = document.getElementById("turnsSelect");
+const setbackToggle     = document.getElementById("setbackToggle");
+const adviceModeToggle  = document.getElementById("adviceModeToggle");
+const remainingDisplay  = document.getElementById("remainingDisplay");
+const roundInfo         = document.getElementById("roundInfo");
+const adviceDisplay     = document.getElementById("adviceDisplay");
+const logContainer      = document.getElementById("logContainer");
+const messageEl         = document.getElementById("message");
+const gridContainer     = document.getElementById("gridContainer");
+const tabs = {
+  Singles: document.getElementById("tabSingles"),
+  Doubles: document.getElementById("tabDoubles"),
+  Triples: document.getElementById("tabTriples"),
+};
+const btnSettingsBottom       = document.getElementById("btnSettingsBottom");
+
+// --- State ---
+let pdcMode        = true;          // true = PDC, false = Calculated
+let startScore     = 121;
+let currentScore   = 121;
+let roundNo        = 1;
+let maxTurns       = 3;             // #beurten per leg
+let turnNo         = 1;             // huidige beurt index
+let dartsPerTurn   = 3;             // altijd 3
+let dartsThrown    = 0;             // pijlen in huidige beurt (0..3)
+let scoreAtTurnStart = 121;
+let setbackOnMiss  = false;
+let historyTurns   = [];            // [[labels], [labels], ...] voltooide beurten
+let currentTurnThrows = [];         // labels in lopende beurt
+let currentAdvice  = [];            // huidig adviespad-stappen (strings)
+let gameActive     = false;
+
+// Snapshot stack voor perfecte UNDO (ook over beurten/legs)
+const stateStack = [];
+function snapshotPush() {
+  stateStack.push(JSON.parse(JSON.stringify({
+    pdcMode, startScore, currentScore, roundNo, maxTurns, turnNo,
+    dartsPerTurn, dartsThrown, scoreAtTurnStart, setbackOnMiss,
+    historyTurns, currentTurnThrows, currentAdvice, gameActive
+  })));
+}
+function snapshotPopRestore() {
+  if (!stateStack.length) return false;
+  const s = stateStack.pop();
+  ({
+    pdcMode, startScore, currentScore, roundNo, maxTurns, turnNo,
+    dartsPerTurn, dartsThrown, scoreAtTurnStart, setbackOnMiss,
+    historyTurns, currentTurnThrows, currentAdvice, gameActive
+  } = s);
+  renderLog(); updateDisplays(); renderAdviceText();
+  return true;
+}
+
+// Helpers UI
+function updateDisplays(){
+  remainingDisplay.textContent = currentScore;
+  roundInfo.textContent = `Ronde ${roundNo} | Beurt ${turnNo}/${maxTurns}`;
+}
+function setMessage(msg,color= "#ffd700"){ messageEl.textContent = msg; messageEl.style.color=color; }
+function renderLog(){
+  logContainer.innerHTML = "";
+  historyTurns.forEach((turn,i)=>{
+    const div = document.createElement("div");
+    div.className="log-turn";
+    div.innerHTML = `<strong>Beurt ${i+1}:</strong> ${turn.join(" - ")}`;
+    logContainer.appendChild(div);
+  });
+  if (currentTurnThrows.length){
+    const div = document.createElement("div");
+    div.className="log-turn";
+    div.innerHTML = `<strong>Beurt ${historyTurns.length+1}:</strong> ${currentTurnThrows.join(" - ")}`;
+    logContainer.appendChild(div);
+  }
+}
+// Tabs
+let currentTab = "Singles";
+Object.keys(tabs).forEach(key=>{
+  tabs[key].addEventListener("click",()=>{
+    currentTab = key;
+    for (let t in tabs) tabs[t].classList.remove("active");
+    tabs[key].classList.add("active");
+    buildGrid(key);
+  });
+});
+
+// Knoppenraster
+function buildGrid(type){
+  gridContainer.innerHTML = "";
+  for(let i=1;i<=20;i++){
+    const btn = document.createElement("button");
+    btn.className="score-btn";
+    let mult=1, label=`S${i}`;
+    if(type==="Doubles"){mult=2; label=`D${i}`;}
+    if(type==="Triples"){mult=3; label=`T${i}`;}
+    btn.textContent = label;
+    btn.addEventListener("click", ()=>throwDart(i*mult,label));
+    gridContainer.appendChild(btn);
+  }
+}
+buildGrid("Singles");
+
+// Start / terug naar instellingen
+startBtn.addEventListener("click", ()=>{
+  // instellingen lezen
+  startScore   = parseInt(startScoreInput.value) || 121;
+  currentScore = startScore;
+  maxTurns     = parseInt(turnsSelect.value) || 1;
+  dartsPerTurn = 3;
+  setbackOnMiss= setbackToggle.checked;
+  pdcMode      = !adviceModeToggle.checked; // toggle UIT = PDC
+  roundNo      = 1; turnNo=1; dartsThrown=0;
+  scoreAtTurnStart = currentScore;
+  historyTurns = []; currentTurnThrows = [];
+  currentAdvice = []; gameActive = true;
+
+  settingsSection.classList.add("hidden");
+  gameSection.classList.remove("hidden");
+  btnSettingsBottom.style.display = "block";
+
+  updateDisplays(); computeAdviceFromScore(); renderAdviceText(); renderLog();
+});
+
+btnSettingsBottom.addEventListener("click", ()=>{
+  // terug naar instellingen, spel resetten maar instellingen blijven
+  gameActive=false;
+  settingsSection.classList.remove("hidden");
+  gameSection.classList.add("hidden");
+  btnSettingsBottom.style.display = "none";
+  setMessage("Terug naar instellingen");
+});
+// Advies helpers
+function computeAdviceFromScore(){
+  if (currentScore>170 || currentScore<2){ currentAdvice=[]; return; }
+  const text = pdcMode ? (pdcTable[currentScore]||"") : (calcCheckout(currentScore)||"");
+  currentAdvice = text ? text.split(" ") : [];
+}
+function finishableWithDarts(steps, dartsLeft){
+  return steps.length>0 && steps.length<=dartsLeft;
+}
+function renderAdviceText(){
+  const dartsLeft = dartsPerTurn - dartsThrown;
+  if (!currentAdvice.length || !finishableWithDarts(currentAdvice,dartsLeft)){
+    adviceDisplay.textContent = ""; return;
+  }
+  adviceDisplay.textContent = currentAdvice.slice(0,dartsLeft).join(" ");
+}
+
+// Na worp — pad volgen of herberekenen
+function updateAdviceProgress(thrownLabel){
+  const dartsLeft = dartsPerTurn - dartsThrown;
+  if (!currentAdvice.length){ computeAdviceFromScore(); renderAdviceText(); return; }
+
+  if (thrownLabel === currentAdvice[0]){
+    currentAdvice.shift(); // pijl uit het pad weg
+    renderAdviceText();
+    return;
+  }
+  // Afwijking → nieuwe route
+  computeAdviceFromScore();
+  // Als niet meer haalbaar in resterende pijlen → leeg
+  if (!finishableWithDarts(currentAdvice,dartsLeft)) currentAdvice=[];
+  renderAdviceText();
+}
+
+// Simpele calculated fallback
+function calcCheckout(score){
+  if(score>170) return "";
+  if(score===50) return "Bull";
+  if(score===25) return "SB";
+  if(score<2) return "";
+  if(score%2===0 && score<=40) return "D"+(score/2);
+  let s=score, res=[];
+  while(s>50){
+    if(s>=60){res.push("T20"); s-=60;}
+    else if(s>40){res.push("T10"); s-=30;}
+    else break;
+  }
+  if (s>40 && s<=50) res.push("Bull");
+  else if (s%2===0 && s<=40) res.push("D"+(s/2));
+  else res.push("S"+s);
+  return res.join(" ");
+}
+// Worp
+function throwDart(value,label){
+  if(!gameActive) return;
+
+  snapshotPush(); // voor perfecte UNDO
+
+  // speciale knoppen
+  if(label==="NS"){
+    dartsThrown++; currentTurnThrows.push("NS");
+    renderLog(); updateAdviceProgress("NS");
+    if (dartsThrown>=dartsPerTurn) endTurn(false);
+    updateDisplays(); return;
+  }
+  if(label==="SB") value=25;
+  if(label==="Bull") value=50;
+
+  if (dartsThrown===0) scoreAtTurnStart=currentScore;
+
+  dartsThrown++;
+  currentScore -= value;
+  updateDisplays();
+
+  // Bust (hele beurt ongeldig)
+  if (currentScore<0 || currentScore===1){
+    currentTurnThrows.push(label+" → Bust");
+    renderLog();
+    // score terug
+    currentScore = scoreAtTurnStart;
+    endTurn(true);
+    setMessage("Bust – beurt voorbij","#f44336");
+    updateDisplays(); computeAdviceFromScore(); renderAdviceText();
+    return;
+  }
+
+  // Checkout (alleen op dubbel of Bull)
+  if (currentScore===0 && (label.startsWith("D") || label==="Bull")){
+    currentTurnThrows.push(label+" → Checkout!");
+    renderLog();
+    legWon();
+    return;
+  }
+
+  // normale worp
+  currentTurnThrows.push(label);
+  renderLog();
+  updateAdviceProgress(label);
+
+  if (dartsThrown>=dartsPerTurn) endTurn(false);
+}
+
+// Beurt klaar
+function endTurn(bust){
+  // zet huidige beurt in log (één regel)
+  if (currentTurnThrows.length){
+    historyTurns.push([...currentTurnThrows]);
+    currentTurnThrows = [];
+  }
+  renderLog();
+
+  dartsThrown=0;
+  turnNo++;
+
+  if (turnNo>maxTurns){
+    // leg voorbij zonder checkout
+    const newStart = setbackOnMiss ? Math.max(121,startScore-1) : startScore;
+    setMessage("Leg voorbij – niet uitgegooid","#ccc");
+    resetLeg(newStart); // zelfde start (of setback) en nieuwe ronde
+  }else{
+    scoreAtTurnStart = currentScore;
+    updateDisplays();
+    computeAdviceFromScore(); renderAdviceText();
+  }
+}
+
+// Leg gewonnen
+function legWon(){
+  startScore++;
+  roundNo++;
+  setMessage("Checkout! Nieuwe leg gestart.", "#ffd700");
+  resetLeg(startScore);
+}
+
+// Reset leg (ook na bust in laatste beurt)
+function resetLeg(newStart){
+  currentScore = newStart;
+  turnNo = 1; dartsThrown = 0;
+  historyTurns = []; currentTurnThrows = [];
+  scoreAtTurnStart = currentScore;
+  updateDisplays(); computeAdviceFromScore(); renderAdviceText(); renderLog();
+}
+// UNDO – volledig herstel (ook beurten/legs)
+function undoLast(){
+  if (!snapshotPopRestore()){
+    setMessage("Niets om ongedaan te maken","#ccc");
+  }else{
+    setMessage("Laatste actie ongedaan gemaakt");
+  }
+}
+document.getElementById("btnUndo").addEventListener("click", undoLast);
+document.getElementById("btnSettingsBottom").addEventListener("click", () => {
+    settingsSection.classList.remove("hidden");
+    gameSection.classList.add("hidden");
+});
+
+// Speciale knoppen
+document.getElementById("btnNS").addEventListener("click", ()=>throwDart(0,"NS"));
+document.getElementById("btnSB").addEventListener("click", ()=>throwDart(25,"SB"));
+document.getElementById("btnBull").addEventListener("click", ()=>throwDart(50,"Bull"));
+// ===== INSTELLINGENKNOP (onderin bij Undo) =====
+document.getElementById("btnSettingsBottom").addEventListener("click", () => {
+    gameSection.classList.add("hidden");
+    settingsSection.classList.remove("hidden");
+});
+
+// ===== PDC CHECKOUT TABEL =====
+const pdcTable = {
+  170:"T20 T20 Bull",169:"",168:"",167:"T20 T19 Bull",166:"",165:"",
+  164:"T20 T18 Bull",163:"",162:"",161:"T20 T17 Bull",160:"T20 T20 D20",
+  159:"",158:"T20 T20 D19",157:"T20 T19 D20",156:"T20 T20 D18",155:"T20 T19 D19",
+  154:"T20 T18 D20",153:"T20 T19 D18",152:"T20 T20 D16",151:"T20 T17 D20",
+  150:"T20 T18 D18",149:"T20 T19 D16",148:"T20 T16 D20",147:"T20 T17 D18",
+  146:"T20 T18 D16",145:"T20 T15 D20",144:"T20 T20 D12",143:"T20 T17 D16",
+  142:"T20 T14 D20",141:"T20 T19 D12",140:"T20 T20 D10",139:"T19 T14 D20",
+  138:"T20 T18 D12",137:"T20 T19 D10",136:"T20 T20 D8",135:"T20 T17 D12",
+  134:"T20 T14 D16",133:"T20 T19 D8",132:"Bull Bull D16",131:"T20 T13 D16",
+  130:"T20 T18 D8",129:"T19 T16 D12",128:"T18 T14 D16",127:"T20 T17 D8",
+  126:"T19 T19 D6",125:"Bull T20 D20",124:"T20 T16 D8",123:"T19 T10 D18",
+  122:"T18 T18 D7",121:"T20 T11 D14",120:"T20 S20 D20",119:"T19 T10 D16",
+  118:"T20 S18 D20",117:"T20 S17 D20",116:"T20 S16 D20",115:"T20 S15 D20",
+  114:"T20 S14 D20",113:"T19 S16 D20",112:"T20 S12 D20",111:"T20 S19 D16",
+  110:"T20 S18 D16",109:"T20 S9 D20",108:"T20 S16 D16",107:"T19 S10 D20",
+  106:"T20 S10 D18",105:"T20 S13 D16",104:"T18 S18 D16",103:"T20 S3 D20",
+  102:"T20 S10 D16",101:"T17 S18 D16",100:"T20 D20",99:"T19 S10 D16",
+  98:"T20 D19",97:"T19 D20",96:"T20 D18",95:"T19 D19",94:"T18 D20",
+  93:"T19 D18",92:"T20 D16",91:"T17 D20",90:"T18 D18",89:"T19 D16",
+  88:"T16 D20",87:"T17 D18",86:"T18 D16",85:"T15 D20",84:"T20 D12",
+  83:"T17 D16",82:"Bull D16",81:"T19 D12",80:"T20 D10",79:"T19 D11",
+  78:"T18 D12",77:"T19 D10",76:"T20 D8",75:"T17 D12",74:"T14 D16",
+  73:"T19 D8",72:"T16 D12",71:"T13 D16",70:"T18 D8",69:"T19 D6",
+  68:"T20 D4",67:"T17 D8",66:"T10 D18",65:"T19 D4",64:"T16 D8",
+  63:"T13 D12",62:"T10 D16",61:"T15 D8",60:"S20 D20",59:"S19 D20",
+  58:"S18 D20",57:"S17 D20",56:"S16 D20",55:"S15 D20",54:"S14 D20",
+  53:"S13 D20",52:"S12 D20",51:"S19 D16",50:"Bull",49:"S17 D16",
+  48:"S16 D16",47:"S15 D16",46:"S14 D16",45:"S13 D16",44:"S12 D16",
+  43:"S11 D16",42:"S10 D16",41:"S9 D16",40:"D20",39:"S7 D16",
+  38:"D19",37:"S5 D16",36:"D18",35:"S3 D16",34:"D17",33:"S1 D16",
+  32:"D16",31:"S15 D8",30:"D15",29:"S13 D8",28:"D14",27:"S11 D8",
+  26:"D13",25:"S9 D8",24:"D12",23:"S7 D8",22:"D11",21:"S5 D8",
+  20:"D10",19:"S3 D8",18:"D9",17:"S1 D8",16:"D8",15:"S7 D4",
+  14:"D7",13:"S5 D4",12:"D6",11:"S3 D4",10:"D5",9:"S1 D4",
+  8:"D4",7:"S3 D2",6:"D3",5:"S1 D2",4:"D2",3:"S1 D1",2:"D1"
+};
+
+</script>
+</body>
+</html>
